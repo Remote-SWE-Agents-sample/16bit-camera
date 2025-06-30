@@ -33,6 +33,11 @@
   width: 100%;
   height: auto;
   image-rendering: pixelated; /* ピクセル化表示を強調 */
+  image-rendering: -moz-crisp-edges;
+  image-rendering: crisp-edges;
+  -ms-interpolation-mode: nearest-neighbor; /* IE用 */
+  box-shadow: 0 0 30px rgba(0, 255, 204, 0.5); /* グローエフェクト強化 */
+  border: 4px solid rgba(0, 255, 204, 0.8); /* ボーダー強化 */
 }
 
 .hidden {

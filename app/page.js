@@ -81,39 +81,79 @@ export default function Home() {
       return;
     }
 
-    // キャンバスのサイズをビデオと合わせる
-    if (canvas.width !== video.videoWidth || canvas.height !== video.videoHeight) {
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
+    // 元のビデオサイズ
+    const originalWidth = video.videoWidth;
+    const originalHeight = video.videoHeight;
+    
+    // ドット絵風にするためピクセル数を減らす（解像度を下げる）
+    // 16bitゲーム機の一般的な解像度は320x240や256x224程度
+    const pixelSize = 8; // ピクセルの大きさ
+    const lowResWidth = Math.floor(originalWidth / pixelSize);
+    const lowResHeight = Math.floor(originalHeight / pixelSize);
+
+    // キャンバスのサイズを設定
+    if (canvas.width !== originalWidth || canvas.height !== originalHeight) {
+      // 最終出力サイズは元のビデオサイズと同じに
+      canvas.width = originalWidth;
+      canvas.height = originalHeight;
       console.log('キャンバスサイズ設定:', canvas.width, 'x', canvas.height);
     }
 
     try {
-      // 映像をキャンバスに描画
-      context.drawImage(video, 0, 0, canvas.width, canvas.height);
-      console.log('ビデオ描画成功');
+      // 一時的な小さいキャンバスを作成（低解像度用）
+      const tempCanvas = document.createElement('canvas');
+      const tempContext = tempCanvas.getContext('2d', { willReadFrequently: true });
+      tempCanvas.width = lowResWidth;
+      tempCanvas.height = lowResHeight;
+
+      // 小さいキャンバスにビデオを縮小描画（これがピクセレーション効果の鍵）
+      tempContext.drawImage(video, 0, 0, lowResWidth, lowResHeight);
       
-      // ピクセルデータを取得
-      const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+      // 小さいキャンバスから画像データを取得
+      const imageData = tempContext.getImageData(0, 0, lowResWidth, lowResHeight);
       const data = imageData.data;
 
     // 色数を減らして16bit風に変換
     for (let i = 0; i < data.length; i += 4) {
-      // 各色チャンネル（RGB）を5bitの32段階に減色
-      data[i] = Math.round(data[i] / 8) * 8;       // R
-      data[i + 1] = Math.round(data[i + 1] / 8) * 8; // G
-      data[i + 2] = Math.round(data[i + 2] / 8) * 8; // B
+      // より強い減色効果（5bit -> 4bit）- より極端な色の量子化
+      // 実際の16bitは R5G6B5 (65536色) だが、よりレトロ感を出すため4bit (16色) 程度に
+      data[i] = Math.round(data[i] / 16) * 16;      // R - 16段階
+      data[i + 1] = Math.round(data[i + 1] / 16) * 16; // G - 16段階
+      data[i + 2] = Math.round(data[i + 2] / 16) * 16; // B - 16段階
       
-      // ディザリングを追加するためのノイズ（オプション）
-      if (Math.random() > 0.95) {
-        data[i] = Math.min(255, data[i] + 8);
-        data[i + 1] = Math.min(255, data[i + 1] + 8);
-        data[i + 2] = Math.min(255, data[i + 2] + 8);
+      // コントラストを上げて「はっきりした」感じにする
+      data[i] = data[i] < 128 ? Math.max(0, data[i] - 16) : Math.min(255, data[i] + 16);
+      data[i + 1] = data[i + 1] < 128 ? Math.max(0, data[i + 1] - 16) : Math.min(255, data[i + 1] + 16);
+      data[i + 2] = data[i + 2] < 128 ? Math.max(0, data[i + 2] - 16) : Math.min(255, data[i + 2] + 16);
+      
+      // ディザリングを追加するためのノイズ（特定のピクセルに適用）
+      if (Math.random() > 0.9) {
+        const noiseAmount = 32; // より強いノイズ効果
+        data[i] = Math.min(255, data[i] + noiseAmount);
+        data[i + 1] = Math.min(255, data[i + 1] + noiseAmount);
+        data[i + 2] = Math.min(255, data[i + 2] + noiseAmount);
       }
     }
 
-      // 処理した画像データをキャンバスに戻す
-      context.putImageData(imageData, 0, 0);
+      // 処理した画像データを小さいキャンバスに戻す
+      tempContext.putImageData(imageData, 0, 0);
+      
+      // メインのキャンバスをクリア
+      context.fillStyle = 'black';
+      context.fillRect(0, 0, canvas.width, canvas.height);
+      
+      // 小さいキャンバスの内容を大きいキャンバスに拡大描画（ピクセル化効果）
+      context.imageSmoothingEnabled = false; // 重要: スムージングを無効化してピクセル感を保持
+      context.drawImage(tempCanvas, 0, 0, originalWidth, originalHeight);
+      
+      // オプション: CRTモニター風のオーバーレイ効果
+      /*
+      context.globalCompositeOperation = 'overlay';
+      context.fillStyle = 'rgba(0, 20, 40, 0.1)'; // 微妙な青緑色のオーバーレイ
+      context.fillRect(0, 0, canvas.width, canvas.height);
+      context.globalCompositeOperation = 'source-over';
+      */
+      
       console.log('16bit効果適用完了');
     } catch (err) {
       console.error('キャンバス処理エラー:', err);
