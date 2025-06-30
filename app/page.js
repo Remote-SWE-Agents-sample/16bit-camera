@@ -8,6 +8,8 @@ export default function Home() {
   const canvasRef = useRef(null);
   const [isStreaming, setIsStreaming] = useState(false);
   const [error, setError] = useState(null);
+  const [pixelSize, setPixelSize] = useState(8); // ピクセルサイズの初期値
+  const [colorDepth, setColorDepth] = useState(16); // 色の深さ（量子化の強さ）
 
   // カメラストリームの開始
   const startCamera = async () => {
@@ -86,8 +88,7 @@ export default function Home() {
     const originalHeight = video.videoHeight;
     
     // ドット絵風にするためピクセル数を減らす（解像度を下げる）
-    // 16bitゲーム機の一般的な解像度は320x240や256x224程度
-    const pixelSize = 8; // ピクセルの大きさ
+    // pixelSizeステート変数を使用（スケールバーで調整可能）
     const lowResWidth = Math.floor(originalWidth / pixelSize);
     const lowResHeight = Math.floor(originalHeight / pixelSize);
 
@@ -115,20 +116,24 @@ export default function Home() {
 
     // 色数を減らして16bit風に変換
     for (let i = 0; i < data.length; i += 4) {
-      // より強い減色効果（5bit -> 4bit）- より極端な色の量子化
-      // 実際の16bitは R5G6B5 (65536色) だが、よりレトロ感を出すため4bit (16色) 程度に
-      data[i] = Math.round(data[i] / 16) * 16;      // R - 16段階
-      data[i + 1] = Math.round(data[i + 1] / 16) * 16; // G - 16段階
-      data[i + 2] = Math.round(data[i + 2] / 16) * 16; // B - 16段階
+      // colorDepthの値に基づいて量子化の強さを調整
+      // 値が大きいほど色数が少なくなる（よりレトロに）
+      const quantize = colorDepth; // スライダーの値そのものを使用
+      
+      // 色の量子化（各チャネルをquantize段階に減色）
+      data[i] = Math.round(data[i] / quantize) * quantize;       // R
+      data[i + 1] = Math.round(data[i + 1] / quantize) * quantize; // G
+      data[i + 2] = Math.round(data[i + 2] / quantize) * quantize; // B
       
       // コントラストを上げて「はっきりした」感じにする
-      data[i] = data[i] < 128 ? Math.max(0, data[i] - 16) : Math.min(255, data[i] + 16);
-      data[i + 1] = data[i + 1] < 128 ? Math.max(0, data[i + 1] - 16) : Math.min(255, data[i + 1] + 16);
-      data[i + 2] = data[i + 2] < 128 ? Math.max(0, data[i + 2] - 16) : Math.min(255, data[i + 2] + 16);
+      const contrastBoost = Math.min(quantize, 20); // 量子化が強いほどコントラストも強めに
+      data[i] = data[i] < 128 ? Math.max(0, data[i] - contrastBoost) : Math.min(255, data[i] + contrastBoost);
+      data[i + 1] = data[i + 1] < 128 ? Math.max(0, data[i + 1] - contrastBoost) : Math.min(255, data[i + 1] + contrastBoost);
+      data[i + 2] = data[i + 2] < 128 ? Math.max(0, data[i + 2] - contrastBoost) : Math.min(255, data[i + 2] + contrastBoost);
       
       // ディザリングを追加するためのノイズ（特定のピクセルに適用）
       if (Math.random() > 0.9) {
-        const noiseAmount = 32; // より強いノイズ効果
+        const noiseAmount = Math.min(quantize * 2, 40); // 量子化に合わせてノイズも調整
         data[i] = Math.min(255, data[i] + noiseAmount);
         data[i + 1] = Math.min(255, data[i + 1] + noiseAmount);
         data[i + 2] = Math.min(255, data[i + 2] + noiseAmount);
@@ -236,6 +241,48 @@ export default function Home() {
         >
           {isStreaming ? 'カメラを停止' : 'カメラを開始'}
         </button>
+        
+        {isStreaming && (
+          <div className={styles.slidersGroup}>
+            <div className={styles.sliderContainer}>
+              <label htmlFor="pixelSlider" className={styles.sliderLabel}>
+                ピクセルサイズ: {pixelSize}
+              </label>
+              <input 
+                id="pixelSlider"
+                type="range" 
+                min="2" 
+                max="16" 
+                value={pixelSize} 
+                onChange={(e) => setPixelSize(parseInt(e.target.value))}
+                className={styles.slider}
+              />
+              <span className={styles.sliderValues}>
+                <span>細かい</span>
+                <span>粗い</span>
+              </span>
+            </div>
+            
+            <div className={styles.sliderContainer}>
+              <label htmlFor="colorSlider" className={styles.sliderLabel}>
+                色の深さ: {Math.pow(2, Math.round(8/colorDepth))}色
+              </label>
+              <input 
+                id="colorSlider"
+                type="range" 
+                min="4" 
+                max="64" 
+                value={colorDepth} 
+                onChange={(e) => setColorDepth(parseInt(e.target.value))}
+                className={styles.slider}
+              />
+              <span className={styles.sliderValues}>
+                <span>多い</span>
+                <span>少ない</span>
+              </span>
+            </div>
+          </div>
+        )}
       </div>
     </main>
   );

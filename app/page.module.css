@@ -83,6 +83,72 @@
   box-shadow: 2px 2px 0px rgba(255, 0, 128, 0.7);
 }
 
+/* スライダー関連のスタイル */
+.slidersGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  width: 100%;
+  max-width: 300px;
+  margin-top: 1.5rem;
+}
+
+.sliderContainer {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  padding: 1rem;
+  background-color: rgba(0, 0, 0, 0.5);
+  border: 2px solid #00ffcc;
+  box-shadow: 0 0 10px rgba(0, 255, 204, 0.3);
+}
+
+.sliderLabel {
+  font-size: 1rem;
+  margin-bottom: 0.5rem;
+  color: #00ffcc;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 10px;
+  background: #121212;
+  border: 1px solid #00ffcc;
+  border-radius: 0;
+  outline: none;
+  margin: 0.5rem 0;
+}
+
+.slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  background: #ff0080;
+  cursor: pointer;
+  border: 2px solid #00ffcc;
+}
+
+.slider::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  background: #ff0080;
+  cursor: pointer;
+  border: 2px solid #00ffcc;
+}
+
+.sliderValues {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  color: #cccccc;
+  margin-top: 0.25rem;
+}
+
 .error {
   color: #ff0080;
   background-color: rgba(255, 0, 128, 0.1);
