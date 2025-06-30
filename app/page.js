@@ -12,13 +12,36 @@ export default function Home() {
   // カメラストリームの開始
   const startCamera = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { facingMode: 'user' } 
-      });
+      console.log('カメラアクセス要求中...');
+      
+      // より具体的な設定で要求
+      const constraints = {
+        video: {
+          facingMode: 'user',
+          width: { ideal: 640 },
+          height: { ideal: 480 }
+        },
+        audio: false
+      };
+      
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
+      console.log('カメラアクセス許可取得成功');
+      
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
+        
+        // 明示的にビデオを再生
+        try {
+          await videoRef.current.play();
+          console.log('ビデオ再生開始');
+        } catch (playError) {
+          console.error('ビデオ再生エラー:', playError);
+        }
+        
         setIsStreaming(true);
         setError(null);
+      } else {
+        console.error('videoRef.current が見つかりません');
       }
     } catch (err) {
       console.error('カメラへのアクセスエラー:', err);
