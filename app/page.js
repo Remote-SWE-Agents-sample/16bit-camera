@@ -64,6 +64,8 @@ export default function Home() {
   // 16bit風エフェクトの適用
   const apply16BitEffect = () => {
     if (!isStreaming || !videoRef.current || !canvasRef.current) return;
+    
+    // 現在のピクセルサイズと色深度を使用
 
     const video = videoRef.current;
     const canvas = canvasRef.current;
@@ -193,6 +195,19 @@ export default function Home() {
       console.log('ストリーミング状態変更: 停止');
     }
   }, [isStreaming]);
+  
+  // スライダー値変更時に即座に反映
+  useEffect(() => {
+    if (isStreaming) {
+      console.log('エフェクト設定変更: ピクセルサイズ=' + pixelSize + ', 色深度=' + colorDepth);
+      // キャンバスをクリアして再描画を促す
+      if (canvasRef.current) {
+        const canvas = canvasRef.current;
+        const context = canvas.getContext('2d', { willReadFrequently: true });
+        context.clearRect(0, 0, canvas.width, canvas.height);
+      }
+    }
+  }, [pixelSize, colorDepth]);
 
   return (
     <main className={styles.main}>
@@ -253,8 +268,14 @@ export default function Home() {
                 type="range" 
                 min="2" 
                 max="16" 
+                step="1"
                 value={pixelSize} 
-                onChange={(e) => setPixelSize(parseInt(e.target.value))}
+                onChange={(e) => {
+                  const newValue = parseInt(e.target.value);
+                  setPixelSize(newValue);
+                  // 即時フィードバックのためのオプションのログ
+                  console.log('ピクセルサイズ変更:', newValue);
+                }}
                 className={styles.slider}
               />
               <span className={styles.sliderValues}>
@@ -272,8 +293,14 @@ export default function Home() {
                 type="range" 
                 min="4" 
                 max="64" 
+                step="4"
                 value={colorDepth} 
-                onChange={(e) => setColorDepth(parseInt(e.target.value))}
+                onChange={(e) => {
+                  const newValue = parseInt(e.target.value);
+                  setColorDepth(newValue);
+                  // 即時フィードバックのためのオプションのログ
+                  console.log('色深度変更:', newValue);
+                }}
                 className={styles.slider}
               />
               <span className={styles.sliderValues}>

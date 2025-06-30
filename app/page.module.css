@@ -126,19 +126,45 @@
 .slider::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
-  width: 20px;
-  height: 20px;
+  width: 24px;
+  height: 24px;
   background: #ff0080;
   cursor: pointer;
   border: 2px solid #00ffcc;
+  transition: all 0.2s ease;
+  box-shadow: 0 0 8px rgba(0, 255, 204, 0.6);
 }
 
 .slider::-moz-range-thumb {
-  width: 20px;
-  height: 20px;
+  width: 24px;
+  height: 24px;
   background: #ff0080;
   cursor: pointer;
   border: 2px solid #00ffcc;
+  transition: all 0.2s ease;
+  box-shadow: 0 0 8px rgba(0, 255, 204, 0.6);
+}
+
+.slider::-webkit-slider-thumb:hover {
+  background: #00ffcc;
+  border-color: #ff0080;
+  transform: scale(1.1);
+}
+
+.slider::-moz-range-thumb:hover {
+  background: #00ffcc;
+  border-color: #ff0080;
+  transform: scale(1.1);
+}
+
+.slider:active::-webkit-slider-thumb {
+  background: #ffffff;
+  box-shadow: 0 0 15px rgba(255, 0, 128, 0.8);
+}
+
+.slider:active::-moz-range-thumb {
+  background: #ffffff;
+  box-shadow: 0 0 15px rgba(255, 0, 128, 0.8);
 }
 
 .sliderValues {
