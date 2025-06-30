@@ -44,6 +44,13 @@ export default function Home() {
     const canvas = canvasRef.current;
     const context = canvas.getContext('2d');
 
+    // ビデオの準備状態をチェック
+    if (video.readyState < 2 || video.videoWidth === 0 || video.videoHeight === 0) {
+      // ビデオがまだ準備できていない場合は次のフレームを要求して待機
+      requestAnimationFrame(apply16BitEffect);
+      return;
+    }
+
     // キャンバスのサイズをビデオと合わせる
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
@@ -51,9 +58,10 @@ export default function Home() {
     // 映像をキャンバスに描画
     context.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-    // ピクセルデータを取得
-    const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
-    const data = imageData.data;
+    try {
+      // ピクセルデータを取得
+      const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+      const data = imageData.data;
 
     // 色数を減らして16bit風に変換
     for (let i = 0; i < data.length; i += 4) {
@@ -70,8 +78,12 @@ export default function Home() {
       }
     }
 
-    // 処理した画像データをキャンバスに戻す
-    context.putImageData(imageData, 0, 0);
+      // 処理した画像データをキャンバスに戻す
+      context.putImageData(imageData, 0, 0);
+    } catch (err) {
+      console.error('キャンバス処理エラー:', err);
+      // エラーがあっても次のフレームを処理試行
+    }
 
     // 次のフレームの処理
     requestAnimationFrame(apply16BitEffect);
@@ -108,7 +120,16 @@ export default function Home() {
           autoPlay
           playsInline
           muted
-          onPlay={() => setIsStreaming(true)}
+          onLoadedMetadata={(e) => {
+            console.log('ビデオメタデータ読み込み完了:', e.target.videoWidth, 'x', e.target.videoHeight);
+          }}
+          onLoadedData={() => {
+            console.log('ビデオデータ読み込み完了');
+          }}
+          onPlay={() => {
+            console.log('ビデオ再生開始');
+            setIsStreaming(true);
+          }}
         />
         
         {/* 16bit風に変換された映像 */}
