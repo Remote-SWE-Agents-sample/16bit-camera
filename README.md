@@ -13,7 +13,7 @@ PCやスマホのインカメラの画像を16bit風に変換し画面に表示�
 
 ```bash
 # リポジトリをクローン
-git clone https://github.com/yourusername/16bit-camera.git
+git clone https://github.com/Remote-SWE-Agents-sample/16bit-camera.git
 cd 16bit-camera
 
 # 依存関係をインストール
