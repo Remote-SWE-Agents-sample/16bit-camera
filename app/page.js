@@ -42,23 +42,34 @@ export default function Home() {
 
     const video = videoRef.current;
     const canvas = canvasRef.current;
-    const context = canvas.getContext('2d');
+    // willReadFrequently オプションを追加してパフォーマンス警告に対応
+    const context = canvas.getContext('2d', { willReadFrequently: true });
 
     // ビデオの準備状態をチェック
-    if (video.readyState < 2 || video.videoWidth === 0 || video.videoHeight === 0) {
-      // ビデオがまだ準備できていない場合は次のフレームを要求して待機
+    if (video.readyState < 2) {
+      console.log('ビデオがまだ準備できていません。状態:', video.readyState);
+      requestAnimationFrame(apply16BitEffect);
+      return;
+    }
+
+    if (video.videoWidth === 0 || video.videoHeight === 0) {
+      console.log('ビデオのサイズが無効です:', video.videoWidth, 'x', video.videoHeight);
       requestAnimationFrame(apply16BitEffect);
       return;
     }
 
     // キャンバスのサイズをビデオと合わせる
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-
-    // 映像をキャンバスに描画
-    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+    if (canvas.width !== video.videoWidth || canvas.height !== video.videoHeight) {
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      console.log('キャンバスサイズ設定:', canvas.width, 'x', canvas.height);
+    }
 
     try {
+      // 映像をキャンバスに描画
+      context.drawImage(video, 0, 0, canvas.width, canvas.height);
+      console.log('ビデオ描画成功');
+      
       // ピクセルデータを取得
       const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
       const data = imageData.data;
@@ -80,13 +91,19 @@ export default function Home() {
 
       // 処理した画像データをキャンバスに戻す
       context.putImageData(imageData, 0, 0);
+      console.log('16bit効果適用完了');
     } catch (err) {
       console.error('キャンバス処理エラー:', err);
-      // エラーがあっても次のフレームを処理試行
+      // エラーの詳細情報
+      if (canvas.width === 0 || canvas.height === 0) {
+        console.error('キャンバスサイズエラー - width:', canvas.width, 'height:', canvas.height);
+      }
     }
 
     // 次のフレームの処理
-    requestAnimationFrame(apply16BitEffect);
+    if (isStreaming) {
+      requestAnimationFrame(apply16BitEffect);
+    }
   };
 
   // コンポーネントマウント時にカメラを開始
@@ -102,7 +119,10 @@ export default function Home() {
   // ストリーミングが開始されたらエフェクトを適用
   useEffect(() => {
     if (isStreaming) {
+      console.log('ストリーミング状態変更: 開始');
       requestAnimationFrame(apply16BitEffect);
+    } else {
+      console.log('ストリーミング状態変更: 停止');
     }
   }, [isStreaming]);
 
@@ -113,18 +133,25 @@ export default function Home() {
       {error && <p className={styles.error}>{error}</p>}
       
       <div className={styles.cameraContainer}>
-        {/* 元の映像（非表示） */}
+        {/* 元の映像（デバッグ用に表示） */}
         <video 
           ref={videoRef}
-          className={styles.hidden}
+          className={styles.videoDebug} // デバッグ中は表示に
           autoPlay
           playsInline
           muted
+          width={640}
+          height={480}
+          style={{ display: 'none' }} // スタイルで非表示
           onLoadedMetadata={(e) => {
             console.log('ビデオメタデータ読み込み完了:', e.target.videoWidth, 'x', e.target.videoHeight);
           }}
           onLoadedData={() => {
             console.log('ビデオデータ読み込み完了');
+            // データ読み込み完了時に明示的にストリーミング開始
+            if (videoRef.current && videoRef.current.readyState >= 2) {
+              setIsStreaming(true);
+            }
           }}
           onPlay={() => {
             console.log('ビデオ再生開始');

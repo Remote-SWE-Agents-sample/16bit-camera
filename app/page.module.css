@@ -39,6 +39,17 @@
   display: none;
 }
 
+.videoDebug {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 160px;
+  height: 120px;
+  opacity: 0.5;
+  z-index: 100;
+  border: 1px solid red;
+}
+
 .controls {
   display: flex;
   gap: 1rem;
